@@ -1,7 +1,25 @@
 **Objective**: 
 This project demonstrates how I used AI as an accelerator while retaining full engineering ownership, architectural judgment, and validation responsibility. Over the course of building the URL Shortener prototype, I applied disciplined prompting, multi-step reasoning, and controlled oversight to ensure that every artifact — code, tests, documentation, and architecture — met production-grade engineering standards.
 
-1. What I Built
+(IMPORTANT — READ BEFORE USING) 
+How to Test the APIs 
+YOU MUST FIRST CREATE A USER
+All core APIs (Shorten, Redirect, Analytics) are protected by Basic Authentication.
+
+That means you cannot call them until you create a user.
+
+Step 1 — Call the CreateUser API (NO AUTH REQUIRED)
+***Sample API to createUser***
+POST /api/v1/users
+Content-Type: application/json
+
+{
+  "username": "testuser",
+  "password": "testpass"
+}
+
+
+1. **What I Built**
 Core System
 A complete URL Shortener service built using Java + Spring Boot.
 
