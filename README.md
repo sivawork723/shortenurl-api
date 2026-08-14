@@ -67,17 +67,17 @@ Exception classes.
 
 DTOs and response models.
 
-I reviewed, refactored, and corrected every AI-generated block:
+**I reviewed, refactored, and corrected every AI-generated block:**
 
-Removed unnecessary complexity.
+-> Removed unnecessary complexity.
 
-Ensured readability and maintainability.
+-> Ensured readability and maintainability.
 
-Ensured alignment with Spring Boot idioms.
+-> Ensured alignment with Spring Boot idioms.
 
-Ensured correctness of redirect and analytics logic.
+-> Ensured correctness of redirect and analytics logic.
 
-AI accelerated implementation; I owned correctness.
+-> AI accelerated implementation, I owned correctness.
 
 2.4 Debugging & Issue Resolution
 AI assisted in diagnosing:
@@ -85,12 +85,6 @@ AI assisted in diagnosing:
 BCrypt warnings (“Encoded password does not look like BCrypt”).
 
 Regex pattern NPEs in unit tests.
-
-Missing @Value injection in service tests.
-
-Incorrect Mockito stubbing.
-
-Redirect header issues.
 
 I validated each fix manually and ensured the root cause was understood.
 
