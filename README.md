@@ -1,4 +1,4 @@
-This project demonstrates how I used AI as an accelerator while retaining full engineering ownership, architectural judgment, and validation responsibility. Over the course of building the URL Shortener prototype, I applied disciplined prompting, multi-step reasoning, and controlled oversight to ensure that every artifact — code, tests, documentation, and architecture — met production-grade engineering standards.
+**Objective**: This project demonstrates how I used AI as an accelerator while retaining full engineering ownership, architectural judgment, and validation responsibility. Over the course of building the URL Shortener prototype, I applied disciplined prompting, multi-step reasoning, and controlled oversight to ensure that every artifact — code, tests, documentation, and architecture — met production-grade engineering standards.
 
 1. What I Built
 Core System
