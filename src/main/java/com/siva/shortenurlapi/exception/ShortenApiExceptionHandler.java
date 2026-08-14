@@ -1,6 +1,8 @@
 package com.siva.shortenurlapi.exception;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -9,6 +11,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import java.util.HashMap;
 import java.util.Map;
 
+@Slf4j
 @RestControllerAdvice
 public class ShortenApiExceptionHandler {
 
@@ -45,4 +48,17 @@ public class ShortenApiExceptionHandler {
 
         return ResponseEntity.badRequest().body(response);
     }
+
+    @ExceptionHandler(AliasAlreadyExistsException.class)
+    public ResponseEntity<Map<String, Object>> handleAliasAlreadyExists(AliasAlreadyExistsException ex) {
+
+        log.warn("Alias already exists error: {}", ex.getMessage());
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("error", "ALIAS_ALREADY_EXISTS");
+        body.put("message", ex.getMessage());
+
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(body);
+    }
+
 }
