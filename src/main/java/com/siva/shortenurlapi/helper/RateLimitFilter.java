@@ -1,5 +1,6 @@
 package com.siva.shortenurlapi.helper;
 
+import com.siva.shortenurlapi.exception.RateLimitExceededException;
 import io.github.bucket4j.Bandwidth;
 import io.github.bucket4j.Bucket;
 import jakarta.servlet.FilterChain;
@@ -42,9 +43,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
             Bucket bucket = cache.computeIfAbsent(ip, k -> createBucket());
 
             if (!bucket.tryConsume(1)) {
-                response.setStatus(429); // Too Many Requests
-                response.getWriter().write("Rate limit exceeded. Try again later.");
-                return;
+                throw new RateLimitExceededException("Rate limit exceeded. Try again later.");
             }
         }
 

@@ -4,11 +4,14 @@ import com.siva.shortenurlapi.dto.ShortenRequest;
 import com.siva.shortenurlapi.dto.ShortenResponse;
 import com.siva.shortenurlapi.dto.UrlAnalyticsResponse;
 import com.siva.shortenurlapi.entity.UrlMapping;
+import com.siva.shortenurlapi.exception.AliasAlreadyExistsException;
 import com.siva.shortenurlapi.exception.InvalidAliasException;
 import com.siva.shortenurlapi.helper.UrlValidationHelper;
 import com.siva.shortenurlapi.repository.UrlMappingRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDateTime;
@@ -17,6 +20,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+@ExtendWith(MockitoExtension.class)
 public class UrlShortenerServiceImplTest {
     private UrlMappingRepository repository;
     private UrlValidationHelper validator;
@@ -107,5 +111,103 @@ public class UrlShortenerServiceImplTest {
         assertEquals("abc123", response.getAlias());
         assertEquals(10, response.getClickCount());
     }
+
+    @Test
+    void shortenUrl_shouldReturnExistingAlias_whenLongUrlAlreadyExists() {
+        String longUrl = "https://google.com";
+
+        // URL validation MUST be mocked
+        when(validator.isValidUrl(longUrl)).thenReturn(true);
+
+        UrlMapping existing = new UrlMapping();
+        existing.setId(1L);
+        existing.setAlias("abc123");
+        existing.setLongUrl(longUrl);
+
+        // Idempotency hit
+        when(repository.findByLongUrl(longUrl)).thenReturn(Optional.of(existing));
+
+        ShortenRequest request = new ShortenRequest();
+        request.setLongUrl(longUrl);
+
+        ShortenResponse response = service.shortenUrl(request);
+
+        assertEquals("abc123", response.getAlias());
+
+        // No new save should happen
+        verify(repository, never()).save(any());
+    }
+
+    @Test
+    void shortenUrl_shouldGenerateNewAlias_whenLongUrlIsNew() {
+
+        String longUrl = "https://newsite.com";
+
+        when(validator.isValidUrl(longUrl)).thenReturn(true);
+        when(repository.findByLongUrl(longUrl)).thenReturn(Optional.empty());
+
+        UrlMapping saved = new UrlMapping();
+        saved.setId(100L);
+        saved.setLongUrl(longUrl);
+
+        when(repository.save(any())).thenReturn(saved);
+
+        ShortenRequest request = new ShortenRequest();
+        request.setLongUrl(longUrl);
+
+        ShortenResponse response = service.shortenUrl(request);
+
+        assertNotNull(response.getAlias());
+        assertTrue(response.getAlias().length() > 0);
+    }
+
+    @Test
+    void shortenUrl_shouldUseCustomAlias_whenProvided() {
+        String longUrl = "https://google.com";
+        String customAlias = "myalias";
+
+        // URL validation MUST be mocked
+        when(validator.isValidUrl(longUrl)).thenReturn(true);
+
+        // Idempotency check
+        when(repository.findByLongUrl(longUrl)).thenReturn(Optional.empty());
+
+        // Alias existence check
+        when(repository.existsByAlias(customAlias)).thenReturn(false);
+
+        // First save (without alias)
+        UrlMapping saved = new UrlMapping();
+        saved.setId(10L);
+        saved.setLongUrl(longUrl);
+
+        when(repository.save(any())).thenReturn(saved);
+
+        ShortenRequest request = new ShortenRequest();
+        request.setLongUrl(longUrl);
+        request.setAlias(customAlias);
+
+        ShortenResponse response = service.shortenUrl(request);
+
+        assertEquals(customAlias, response.getAlias());
+    }
+
+    @Test
+    void shortenUrl_shouldThrowException_whenCustomAliasExists() {
+        String longUrl = "https://google.com";
+        String customAlias = "taken";
+
+        // URL validation MUST be mocked
+        when(validator.isValidUrl(longUrl)).thenReturn(true);
+
+        // Alias existence check
+        when(repository.existsByAlias(customAlias)).thenReturn(true);
+
+        ShortenRequest request = new ShortenRequest();
+        request.setLongUrl(longUrl);
+        request.setAlias(customAlias);
+
+        assertThrows(AliasAlreadyExistsException.class, () -> service.shortenUrl(request));
+    }
+
 }
 

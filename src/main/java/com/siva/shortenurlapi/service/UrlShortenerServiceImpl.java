@@ -4,19 +4,19 @@ import com.siva.shortenurlapi.dto.ShortenRequest;
 import com.siva.shortenurlapi.dto.ShortenResponse;
 import com.siva.shortenurlapi.dto.UrlAnalyticsResponse;
 import com.siva.shortenurlapi.entity.UrlMapping;
-import com.siva.shortenurlapi.exception.AliasAlreadyExistsException;
-import com.siva.shortenurlapi.exception.InvalidAliasException;
-import com.siva.shortenurlapi.exception.InvalidUrlException;
+import com.siva.shortenurlapi.exception.*;
 import com.siva.shortenurlapi.helper.UrlValidationHelper;
 import com.siva.shortenurlapi.repository.UrlMappingRepository;
 import com.siva.shortenurlapi.util.Base62Encoder;
 
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 @Slf4j
 @Service
@@ -32,6 +32,7 @@ public class UrlShortenerServiceImpl implements UrlShortenerService {
     private final UrlMappingRepository urlMappingRepository;
     private final UrlValidationHelper urlValidationHelper;
 
+    @Transactional
     public ShortenResponse shortenUrl(ShortenRequest request) {
 
         // ---------------------------------------------------------
@@ -43,6 +44,20 @@ public class UrlShortenerServiceImpl implements UrlShortenerService {
         if (!urlValidationHelper.isValidUrl(longUrl)) {
             log.warn("Invalid URL format: {}", longUrl);
             throw new InvalidUrlException("Invalid URL format");
+        }
+
+        // If long URL already exists, return existing short URL
+        Optional<UrlMapping> existing = urlMappingRepository.findByLongUrl(longUrl);
+
+        if (existing.isPresent()) {
+            UrlMapping m = existing.get();
+            log.info("Idempotent hit: long URL already shortened as alias {}", m.getAlias());
+
+            return ShortenResponse.builder()
+                    .shortUrl(shortDomain + m.getAlias())
+                    .alias(m.getAlias())
+                    .expiryDate(m.getExpiryDate())
+                    .build();
         }
 
         // ---------------------------------------------------------
@@ -112,15 +127,12 @@ public class UrlShortenerServiceImpl implements UrlShortenerService {
 
         log.info("Fetching long URL for alias: {}", alias);
         UrlMapping mapping = urlMappingRepository.findByAlias(alias)
-                .orElseThrow(() -> {
-                    log.warn("Alias not found: {}", alias);
-                    return new InvalidAliasException("Alias not found");
-                });
+                .orElseThrow(() -> new UrlNotFoundException("Alias not found"));
 
         if (mapping.getExpiryDate() != null &&
                 mapping.getExpiryDate().isBefore(LocalDateTime.now())) {
             log.warn("Alias {} has expired", alias);
-            throw new InvalidUrlException("URL has expired");
+            throw new ExpiredUrlException("URL has expired");
         }
 
         return mapping.getLongUrl();

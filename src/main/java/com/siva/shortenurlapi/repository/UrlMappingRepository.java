@@ -10,4 +10,6 @@ public interface UrlMappingRepository extends JpaRepository<UrlMapping, Long> {
     boolean existsByAlias(String alias);
     Optional<UrlMapping> findByAlias(String alias);
 
+    Optional<UrlMapping> findByLongUrl(String longUrl);
+
 }

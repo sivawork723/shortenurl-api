@@ -16,5 +16,4 @@ public class UrlValidationHelper {
             return false;
         }
     }
-
 }

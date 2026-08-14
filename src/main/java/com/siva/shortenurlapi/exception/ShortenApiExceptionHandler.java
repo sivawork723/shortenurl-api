@@ -61,4 +61,28 @@ public class ShortenApiExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(body);
     }
 
+    @ExceptionHandler(UrlNotFoundException.class)
+    public ResponseEntity<Map<String, Object>> handleNotFound(UrlNotFoundException ex) {
+        return ResponseEntity.status(404).body(Map.of(
+                "error", "URL_NOT_FOUND",
+                "message", ex.getMessage()
+        ));
+    }
+
+    @ExceptionHandler(ExpiredUrlException.class)
+    public ResponseEntity<Map<String, Object>> handleExpired(ExpiredUrlException ex) {
+        return ResponseEntity.status(410).body(Map.of(
+                "error", "URL_EXPIRED",
+                "message", ex.getMessage()
+        ));
+    }
+
+    @ExceptionHandler(RateLimitExceededException.class)
+    public ResponseEntity<Map<String, Object>> handleRateLimit(RateLimitExceededException ex) {
+        return ResponseEntity.status(429).body(Map.of(
+                "error", "RATE_LIMIT_EXCEEDED",
+                "message", ex.getMessage()
+        ));
+    }
+
 }
