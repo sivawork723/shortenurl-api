@@ -6,6 +6,7 @@ import com.siva.shortenurlapi.dto.UrlAnalyticsResponse;
 import com.siva.shortenurlapi.entity.UrlMapping;
 import com.siva.shortenurlapi.exception.AliasAlreadyExistsException;
 import com.siva.shortenurlapi.exception.InvalidAliasException;
+import com.siva.shortenurlapi.exception.UrlAlreadyExistsException;
 import com.siva.shortenurlapi.helper.EnterpriseUrlValidationHelper;
 import com.siva.shortenurlapi.repository.UrlMappingRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -116,34 +117,36 @@ public class UrlShortenerServiceImplTest {
     void shortenUrl_shouldReturnExistingAlias_whenLongUrlAlreadyExists() {
         String longUrl = "https://google.com";
 
-        // URL validation MUST be mocked
         when(validator.isValid(longUrl)).thenReturn(true);
+        when(validator.canonicalize(longUrl)).thenReturn(longUrl);
 
         UrlMapping existing = new UrlMapping();
         existing.setId(1L);
         existing.setAlias("abc123");
         existing.setLongUrl(longUrl);
 
-        // Idempotency hit
-        when(repository.findByLongUrl(longUrl)).thenReturn(Optional.of(existing));
+        when(repository.findByLongUrl(longUrl))
+                .thenReturn(Optional.of(existing));
 
         ShortenRequest request = new ShortenRequest();
         request.setLongUrl(longUrl);
 
-        ShortenResponse response = service.shortenUrl(request);
+        UrlAlreadyExistsException ex = assertThrows(
+                UrlAlreadyExistsException.class,
+                () -> service.shortenUrl(request)
+        );
 
-        assertEquals("abc123", response.getAlias());
-
-        // No new save should happen
-        verify(repository, never()).save(any());
+        assertTrue(ex.getMessage().contains("abc123"));
     }
 
     @Test
     void shortenUrl_shouldGenerateNewAlias_whenLongUrlIsNew() {
 
         String longUrl = "https://newsite.com";
-
+        when(validator.canonicalize(longUrl)).thenReturn(longUrl);
         when(validator.isValid(longUrl)).thenReturn(true);
+        when(validator.isValid(longUrl)).thenReturn(true);
+
         when(repository.findByLongUrl(longUrl)).thenReturn(Optional.empty());
 
         UrlMapping saved = new UrlMapping();
@@ -167,6 +170,7 @@ public class UrlShortenerServiceImplTest {
         String customAlias = "myalias";
 
         // URL validation MUST be mocked
+        when(validator.canonicalize(longUrl)).thenReturn(longUrl);
         when(validator.isValid(longUrl)).thenReturn(true);
 
         // Idempotency check
