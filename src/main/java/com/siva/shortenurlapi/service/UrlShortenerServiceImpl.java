@@ -5,7 +5,7 @@ import com.siva.shortenurlapi.dto.ShortenResponse;
 import com.siva.shortenurlapi.dto.UrlAnalyticsResponse;
 import com.siva.shortenurlapi.entity.UrlMapping;
 import com.siva.shortenurlapi.exception.*;
-import com.siva.shortenurlapi.helper.UrlValidationHelper;
+import com.siva.shortenurlapi.helper.EnterpriseUrlValidationHelper;
 import com.siva.shortenurlapi.repository.UrlMappingRepository;
 import com.siva.shortenurlapi.util.Base62Encoder;
 
@@ -30,7 +30,7 @@ public class UrlShortenerServiceImpl implements UrlShortenerService {
     private String aliasPattern;
 
     private final UrlMappingRepository urlMappingRepository;
-    private final UrlValidationHelper urlValidationHelper;
+    private final EnterpriseUrlValidationHelper urlValidationHelper;
 
     @Transactional
     public ShortenResponse shortenUrl(ShortenRequest request) {
@@ -39,15 +39,17 @@ public class UrlShortenerServiceImpl implements UrlShortenerService {
         // STEP 1: Validate long URL (DTO already does basic checks)
         // ---------------------------------------------------------
         log.info("Validating long URL: {}", request.getLongUrl());
-        String longUrl = request.getLongUrl().trim();
 
-        if (!urlValidationHelper.isValidUrl(longUrl)) {
-            log.warn("Invalid URL format: {}", longUrl);
+        String url = request.getLongUrl();
+        if (!urlValidationHelper.isValid(url)) {
             throw new InvalidUrlException("Invalid URL format");
         }
 
+        String canonical = urlValidationHelper.canonicalize(url);
+
+
         // If long URL already exists, return existing short URL
-        Optional<UrlMapping> existing = urlMappingRepository.findByLongUrl(longUrl);
+        Optional<UrlMapping> existing = urlMappingRepository.findByLongUrl(canonical);
 
         if (existing.isPresent()) {
             UrlMapping m = existing.get();
@@ -88,7 +90,7 @@ public class UrlShortenerServiceImpl implements UrlShortenerService {
         // ---------------------------------------------------------
         log.info("Saving initial URL mapping record");
         UrlMapping mapping = new UrlMapping();
-        mapping.setLongUrl(longUrl);
+        mapping.setLongUrl(canonical);
         mapping.setCreatedAt(LocalDateTime.now());
 
         if (request.getExpiryDays() != null) {

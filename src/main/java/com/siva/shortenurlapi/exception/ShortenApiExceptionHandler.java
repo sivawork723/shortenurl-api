@@ -85,4 +85,12 @@ public class ShortenApiExceptionHandler {
         ));
     }
 
+    @ExceptionHandler(URISyntaxException.class)
+    public ResponseEntity<Map<String, Object>> handleNotFound(URISyntaxException ex) {
+        return ResponseEntity.status(400).body(Map.of(
+                "error", "Invalid URL",
+                "message", ex.getMessage()
+        ));
+    }
+
 }
