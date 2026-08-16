@@ -55,17 +55,13 @@ public class UrlShortenerServiceImpl implements UrlShortenerService {
             UrlMapping m = existing.get();
             log.info("Idempotent hit: long URL already shortened as alias {}", m.getAlias());
 
-            return ShortenResponse.builder()
-                    .shortUrl(shortDomain + m.getAlias())
-                    .alias(m.getAlias())
-                    .expiryDate(m.getExpiryDate())
-                    .build();
+            throw new UrlAlreadyExistsException("Long URL already shortened as alias " +m.getAlias(), m.getAlias(), (shortDomain+m.getAlias()));
         }
 
         // ---------------------------------------------------------
         // STEP 2: If custom alias is provided → validate + check existence
         // ---------------------------------------------------------
-        String alias = request.getAlias();;
+        String alias = request.getAlias();
 
         if (alias!= null && !alias.isBlank()) {
             log.info("Custom alias provided: {}", alias);

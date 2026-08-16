@@ -69,6 +69,16 @@ public class ShortenApiExceptionHandler {
         ));
     }
 
+    @ExceptionHandler(UrlAlreadyExistsException.class)
+    public ResponseEntity<Map<String, Object>> handleNotFound(UrlAlreadyExistsException ex) {
+        return ResponseEntity.status(409).body(Map.of(
+                "error", "URL_ALREADY_EXISTS",
+                "message", ex.getMessage(),
+                "alias", ex.getAlias(),
+                "shortUrl", ex.getShortUrl()
+        ));
+    }
+
     @ExceptionHandler(ExpiredUrlException.class)
     public ResponseEntity<Map<String, Object>> handleExpired(ExpiredUrlException ex) {
         return ResponseEntity.status(410).body(Map.of(
